@@ -1,0 +1,26 @@
+services:
+  postgres_db:
+    # 1. Imagen oficial de PostgreSQL versión 16 liviana (alpine)
+    image: postgres:16-alpine
+    
+    # 2. Nombre fácil para identificar nuestro contenedor
+    container_name: de_postgres
+    
+    # 3. Si el PC se reinicia, vuelve a encender la base de datos a menos que la apaguemos nosotros
+    restart: unless-stopped
+    
+    # 4. Leer el usuario y contraseña desde nuestro archivo secreto .env
+    env_file:
+      - .env
+      
+    # 5. Conectar el puerto 5432 de tu PC con el 5432 del contenedor
+    ports:
+      - "${POSTGRES_PORT}:5432"
+      
+    # 6. Enchufar el Volumen persistente donde Postgres guarda sus tablas
+    volumes:
+      - pgdata_volumen:/var/lib/postgresql/data
+
+# Declaración oficial del disco duro externo (Volumen)
+volumes:
+  pgdata_volumen:
