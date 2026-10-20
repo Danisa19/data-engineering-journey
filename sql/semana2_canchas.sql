@@ -1,41 +1,65 @@
--- Limpiamos tablas 
+-- ==========================================
+-- 1. LIMPIEZA Y CREACIÓN DE TABLAS (DDL)
+-- ==========================================
+DROP TABLE IF EXISTS reservas;
+DROP TABLE IF EXISTS canchas;
 
-drop table if exists reservas;
-drop table if exists canchas;
-
--- Crear la tabla madre canchas
-
-create table canchas(
-	id serial primary key,
-	nombre VARCHAR(50) not null unique,
-	precio_hora INT not null check (precio_hora > 0)
+CREATE TABLE canchas (
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(50) NOT NULL UNIQUE,
+    precio_hora INT NOT NULL CHECK (precio_hora > 0)
 );
 
--- Crear la tabla hija reservas
-
-create table reservas(
-	id serial primary key,
-	cliente VARCHAR(100) not null,
-	horas INT not null check(horas >=1 and horas <= 5),
-	cancha_id INT not null references canchas(id)
+CREATE TABLE reservas (
+    id SERIAL PRIMARY KEY,
+    cliente VARCHAR(100) NOT NULL,
+    horas INT NOT NULL CHECK (horas >= 1 AND horas <= 5),
+    fecha DATE NOT NULL DEFAULT CURRENT_DATE,
+    cancha_id INT NOT NULL REFERENCES canchas(id)
 );
 
--- Cargar datos canchas
-
-insert into canchas(nombre, precio_hora) values
+-- ==========================================
+-- 2. CARGA DE DATOS (DML)
+-- ==========================================
+INSERT INTO canchas (nombre, precio_hora) VALUES
 ('Cancha 1 Fraternidad', 25000),
 ('Cancha 2 techada', 30000),
 ('Cancha 3 rosario', 20000);
 
-insert into reservas(cliente,horas, cancha_id) values
-('Daniel Figueroa', 2, 1),
-('Fernanda Pedrero', 1, 2),
-('Cosme fulanito',2, 1);
+INSERT INTO reservas (cliente, horas, fecha, cancha_id) VALUES
+('Daniel Figueroa', 2, '2026-10-15', 1),
+('Fernanda Pedrero', 1, '2026-10-16', 2),
+('Cosme Fulanito', 2, '2026-10-18', 1),
+('Juan Perez', 3, '2026-10-19', 2);
 
-select
-	canchas.nombre,
-	coalesce(SUM(canchas.precio_hora * reservas.horas),0) as total_a_pagar
-from canchas
-left join reservas on reservas.cancha_id = canchas.id
-group by nombre
-order by total_a_pagar desc;
+-- ==========================================
+-- 3. REPORTES ANALÍTICOS (QUERIES)
+-- ==========================================
+
+-- Reporte 1: Recaudación histórica total por cancha (Día 1)
+SELECT 
+    canchas.nombre, 
+    COALESCE(SUM(reservas.horas * canchas.precio_hora), 0) AS recaudacion_total
+FROM canchas
+LEFT JOIN reservas ON canchas.id = reservas.cancha_id
+GROUP BY canchas.nombre
+ORDER BY recaudacion_total DESC;
+
+-- Reporte 2: Canchas con recaudación > $60.000 desde el 16 de oct (WHERE + HAVING)
+SELECT 
+    canchas.nombre,
+    COALESCE(SUM(canchas.precio_hora * reservas.horas), 0) AS recaudacion_total
+FROM canchas
+LEFT JOIN reservas ON reservas.cancha_id = canchas.id
+WHERE reservas.fecha >= '2026-10-16'
+GROUP BY canchas.nombre
+HAVING SUM(canchas.precio_hora * reservas.horas) > 60000;
+
+-- Reporte 3: Todas las canchas (incluyendo $0) filtrando fecha dentro del ON
+SELECT 
+    canchas.nombre,
+    COALESCE(SUM(canchas.precio_hora * reservas.horas), 0) AS recaudacion_total
+FROM canchas
+LEFT JOIN reservas ON reservas.cancha_id = canchas.id AND reservas.fecha >= '2026-10-16'
+GROUP BY canchas.nombre
+ORDER BY recaudacion_total DESC;
