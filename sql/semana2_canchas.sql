@@ -63,3 +63,25 @@ FROM canchas
 LEFT JOIN reservas ON reservas.cancha_id = canchas.id AND reservas.fecha >= '2026-10-16'
 GROUP BY canchas.nombre
 ORDER BY recaudacion_total DESC;
+
+-- PASO 1: Calculamos el total por cancha
+WITH recaudacion_por_cancha AS (
+    SELECT 
+        canchas.nombre, 
+        COALESCE(SUM(reservas.horas * canchas.precio_hora), 0) AS total_cancha
+    FROM canchas
+    LEFT JOIN reservas ON canchas.id = reservas.cancha_id
+    GROUP BY canchas.nombre
+),
+-- PASO 2: Separado por una coma, calculamos el promedio usando la tabla del Paso 1
+calculo_promedio AS (
+    SELECT AVG(total_cancha) AS promedio_general
+    FROM recaudacion_por_cancha
+)
+-- PASO 3: Cruzamos las dos y filtramos directo con los nombres limpios
+SELECT 
+    recaudacion_por_cancha.nombre, 
+    recaudacion_por_cancha.total_cancha,
+    ROUND(calculo_promedio.promedio_general, 0) AS promedio_complejo
+FROM recaudacion_por_cancha, calculo_promedio
+WHERE recaudacion_por_cancha.total_cancha > calculo_promedio.promedio_general;
