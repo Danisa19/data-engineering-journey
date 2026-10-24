@@ -43,3 +43,34 @@ create table mantenimientos (
   fecha_inicio timestamp not null
 );
 
+insert into digestores (tag, tipo, ubicacion, capacidad) values
+	('DIG-L1', 'continuo','Línea 1',1500),
+	('DIG-L2', 'continuo','Línea 2',2500),
+	('DIG-L3', 'batch','Línea 3',3300);
+
+insert into sensores (tag, tipo, zona, unidad, digestor_id) values
+	('TT-100', 'temperatura','inferior','°C',1),
+	('TT-101', 'temperatura','coccion','°C',1),
+	('TT-102', 'temperatura','superior','°C',1),
+	('PT-100', 'presion','superior','bar',1),
+	('LT-100', 'nivel','superior','%',1),
+	('FT-100', 'flujo','linea_licor','m3/h',1),
+	('TT-200', 'temperatura','inferior','°C',2),
+	('TT-201', 'temperatura','coccion','°C',2),
+	('TT-202', 'temperatura','superior','°C',2),
+	('PT-200', 'presion','superior','bar',2),
+	('LT-200', 'nivel','superior','%',2),
+	('FT-200', 'flujo','linea_licor','m3/h',2),
+	('TT-300', 'temperatura','inferior','°C',3),
+	('TT-301', 'temperatura','superior','°C',3),
+	('PT-300', 'presion','superior','bar',3),
+	('LT-300', 'nivel','superior','%',3),
+	('FT-300', 'flujo','linea_licor','m3/h',3);
+
+insert into tecnicos (nombre, especialidad) values 
+	('Daniel Figueroa', 'instrumentista'),
+	('Juan Soto', 'electricista'),
+	('Elias Gonzalez', 'mecanico'),
+	('Fernanda Pedrero', 'instrumentista'),
+	('Luis Santibañez', 'electricista');
+
