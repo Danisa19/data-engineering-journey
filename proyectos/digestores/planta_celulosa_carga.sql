@@ -163,7 +163,45 @@ where l.sensor_id in (select id from sensores where sensores.tipo = 'flujo' and 
 	and l.fecha_hora >= '2026-10-06 09:00' 
 	and l.fecha_hora < '2026-10-06 21:00' ;
 
+-- 1. ¿Cuál es la temperatura promedio de cada digestor en cada zona? (el perfil de temperatura)
 
+select d.tag, s.zona, round((avg(l.medicion)), 2) as temperatura_promedio
+from sensores s 
+inner join lecturas l on l.sensor_id = s.id
+inner join digestores d on d.id = s.digestor_id 
+where s.tipo = 'temperatura'
+group by d.tag, s.zona
+order by d.tag, case 
+		when s.zona ='superior' then 1
+		when s.zona ='coccion' then 2
+		when s.zona ='inferior' then 3
+	end;
+
+-- 2. ¿Cuántos mantenimientos tuvo cada digestor, por tipo?
+
+select d.tag, 
+	count(*) filter (where m.tipo = 'preventivo') as preventivos, count(*) filter (where m.tipo = 'correctivo') as correctivos
+from digestores d 
+inner join mantenimientos m on m.digestor_id = d.id
+group by d.tag
+order by d.tag;
+
+-- 3. ¿Cuántas horas de mantenimiento acumuló cada especialidad?
+
+select t.especialidad, SUM(m.duracion_horas) as horas_mantencion, count(*) as cantidad_mantenimientos
+from mantenimientos m
+inner join tecnicos t on t.id = m.tecnico_id 
+group by t.especialidad 
+order by horas_mantencion desc;
+
+-- 4. ¿Qué digestor acumuló más horas de mantenimiento correctivo?
+
+select d.tag, sum(m.duracion_horas) as horas_mantenimiento_correctivo
+from digestores d 
+inner join mantenimientos m on m.digestor_id = d.id
+where m.tipo = 'correctivo'
+group by d.tag
+order by horas_mantenimiento_correctivo desc limit 1;
 
 
 	
