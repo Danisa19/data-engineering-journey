@@ -90,3 +90,13 @@ El 5 de octubre a las 14:00, la bomba de circulación de licor del DIG-L2 empez�
 
 Por su parte, DIG-L3 operó normal toda la semana y sirve como referencia para comparar. 
 
+## Hallazgos
+
+### 1. Perfil de temperatura por digestor y zona
+
+| Zona | DIG-L1 | DIG-L2 | DIG-L3 |
+|---|---|---|---|
+| superior | 112.19| 116.24 | 119.58 |
+| cocción | 146.23| 150.50 | --- |
+| inferior | 86.64 | 88.32 | 89.85 |
+
