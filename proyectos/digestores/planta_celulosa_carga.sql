@@ -241,6 +241,70 @@ having avg(l.medicion) < (
 
 -- 8. Qué días el flujo promedio del DIG-L2 estuvo por debajo de su propio promedio semanal?
 
-select *
-from senso
+with flujo_diario as (
+    select l.fecha_hora::date as dia, AVG(l.medicion) as flujo_promedio_diario
+	from sensores s 
+	inner join lecturas l on l.sensor_id = s.id 
+	inner join digestores d on d.id = s.digestor_id 
+	where s.tipo = 'flujo' and d.tag = 'DIG-L2'
+	group by l.fecha_hora::date
+)
+select f.dia, round((f.flujo_promedio_diario),2) as flujo_promedio_diario,
+	(select round(avg(f2.flujo_promedio_diario),2) from flujo_diario f2) as flujo_promedio_semanal 
+from flujo_diario f
+where flujo_promedio_diario < (select avg(f2.flujo_promedio_diario) from flujo_diario f2)
+order by f.
+
+-- 9. Para cada digestor, ¿cuál fue su día de cocción más caliente?
+
+with temperatura_diaria as (
+    select d.tag, l.fecha_hora::date as dia, AVG(l.medicion) as temp_coccion_promedio
+	from sensores s 
+	inner join lecturas l on l.sensor_id = s.id 
+	inner join digestores d on d.id = s.digestor_id 
+	where s.tipo = 'temperatura' and s.zona = 'coccion' 
+	group by d.tag, l.fecha_hora::date
+),
+ranking_diario as (
+	select tag, dia, temp_coccion_promedio as temp_coccion_promedio,
+	row_number() over (partition by tag order by temp_coccion_promedio DESC) as ranking
+	from temperatura_diaria
+)
+select tag, dia, round(temp_coccion_promedio, 2) as temp_coccion_promedio, ranking
+from ranking_diario
+where ranking = 1;
+
+-- 10. ¿Cuándo empezó la anomalía del DIG-L2?
+
+with valor_anterior as (
+	select l.fecha_hora as dia_hora, l.medicion as valor_actual, lag(medicion) over (order by fecha_hora) as valor_anterior_medido
+	from sensores s
+	inner join digestores d on d.id = s.digestor_id 
+	inner join lecturas l on l.sensor_id = s.id 
+	where s.tag = 'TT-201'
+)
+
+select dia_hora, valor_actual, valor_anterior_medido
+from valor_anterior 
+where valor_anterior_medido >= 150 and valor_actual < 150;
+
+-- 11. ¿Cuántas horas estuvo detenido cada digestor, según sus lecturas de flujo?
+
+select d.tag, COUNT(l.medicion) * 0.25 as horas_detenido_digestor
+from sensores s 
+inner join digestores d on d.id = s.digestor_id 
+inner join lecturas l on l.sensor_id  = s.id
+where s.tipo = 'flujo' and l.medicion < 10
+group by d.tag
+
+-- 12. Para cada mantenimiento correctivo, ¿cuál era la temperatura de cocción promedio en las 6 horas previas?
+
+select m.id, d.tag, m.fecha_inicio as inicio_mantenimiento, ROUND(AVG(l.medicion), 2) as temp_coccion_previa, count(*) as lecturas
+from mantenimientos m
+inner join digestores d on d.id  = m.digestor_id
+inner join sensores s on s.digestor_id = m.digestor_id
+inner join lecturas l on l.sensor_id = s.id
+where m.tipo = 'correctivo' and s.tipo = 'temperatura' and s.zona = 'coccion' and l.fecha_hora >= m.fecha_inicio - interval '6 hours' and l.fecha_hora <  m.fecha_inicio
+group by m.id, d.tag, m.fecha_inicio
+order by inicio_mantenimiento
 
