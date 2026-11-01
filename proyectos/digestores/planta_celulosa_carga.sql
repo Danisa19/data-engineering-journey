@@ -88,6 +88,8 @@ insert into mantenimientos (tecnico_id, digestor_id, tipo, duracion_horas, fecha
 	(4,2,'preventivo',4,'2026-10-04 08:30:00'),
 	(1,3,'preventivo',1,'2026-10-03 11:30:00');
 
+select setseed(0.42);
+
 insert into lecturas (sensor_id, medicion, fecha_hora) 
 select s.id,
 	case 
@@ -203,8 +205,6 @@ where m.tipo = 'correctivo'
 group by d.tag
 order by horas_mantenimiento_correctivo desc limit 1;
 
-select count(*) from lecturas;
-
 -- 5. ¿Qué sensores de temperatura de cocción registraron lecturas bajo 150 °C, y cuántas?
 
 select s.tag, count(*) as lecturas_bajo_150
@@ -253,7 +253,7 @@ select f.dia, round((f.flujo_promedio_diario),2) as flujo_promedio_diario,
 	(select round(avg(f2.flujo_promedio_diario),2) from flujo_diario f2) as flujo_promedio_semanal 
 from flujo_diario f
 where flujo_promedio_diario < (select avg(f2.flujo_promedio_diario) from flujo_diario f2)
-order by f.
+order by f.dia;
 
 -- 9. Para cada digestor, ¿cuál fue su día de cocción más caliente?
 
@@ -283,7 +283,6 @@ with valor_anterior as (
 	inner join lecturas l on l.sensor_id = s.id 
 	where s.tag = 'TT-201'
 )
-
 select dia_hora, valor_actual, valor_anterior_medido
 from valor_anterior 
 where valor_anterior_medido >= 150 and valor_actual < 150;
@@ -295,16 +294,15 @@ from sensores s
 inner join digestores d on d.id = s.digestor_id 
 inner join lecturas l on l.sensor_id  = s.id
 where s.tipo = 'flujo' and l.medicion < 10
-group by d.tag
+group by d.tag;
 
 -- 12. Para cada mantenimiento correctivo, ¿cuál era la temperatura de cocción promedio en las 6 horas previas?
 
 select m.id, d.tag, m.fecha_inicio as inicio_mantenimiento, ROUND(AVG(l.medicion), 2) as temp_coccion_previa, count(*) as lecturas
-from mantenimientos m
-inner join digestores d on d.id  = m.digestor_id
-inner join sensores s on s.digestor_id = m.digestor_id
-inner join lecturas l on l.sensor_id = s.id
+from mantenimientos m 
+inner join digestores d on d.id  = m.digestor_id 
+inner join sensores s on s.digestor_id = m.digestor_id 
+inner join lecturas l on l.sensor_id = s.id 
 where m.tipo = 'correctivo' and s.tipo = 'temperatura' and s.zona = 'coccion' and l.fecha_hora >= m.fecha_inicio - interval '6 hours' and l.fecha_hora <  m.fecha_inicio
 group by m.id, d.tag, m.fecha_inicio
-order by inicio_mantenimiento
-
+order by inicio_mantenimiento ;

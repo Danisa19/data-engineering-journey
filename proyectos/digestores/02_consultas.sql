@@ -86,4 +86,103 @@ having avg(l.medicion) < (
 	where s2.tipo = 'temperatura' and s2.zona = 'coccion'
 );
 
+-- ---------------------------------------------------------
+-- Nivel 3: subconsultas y CTE
+-- ---------------------------------------------------------
+
+-- 8. ¿Qué días el flujo promedio del DIG-L2 estuvo por debajo de su propio promedio semanal?
+-- Por qué importa: el flujo es la variable más cercana a la falla de la bomba.
+-- Respuesta: el 5 y el 6 de octubre. El 6 es el más bajo, porque concentró la
+-- anomalía y la detención; el 5 baja por la anomalía que empezó a las 14:00.
+with flujo_diario as (
+    select l.fecha_hora::date as dia, avg(l.medicion) as flujo_promedio_diario
+    from sensores s
+    inner join lecturas l on l.sensor_id = s.id
+    inner join digestores d on d.id = s.digestor_id
+    where s.tipo = 'flujo' and d.tag = 'DIG-L2'
+    group by l.fecha_hora::date
+)
+select f.dia,
+       round(f.flujo_promedio_diario, 2) as flujo_promedio_diario,
+       (select round(avg(f2.flujo_promedio_diario), 2) from flujo_diario f2) as flujo_promedio_semanal
+from flujo_diario f
+where f.flujo_promedio_diario < (select avg(f2.flujo_promedio_diario) from flujo_diario f2)
+order by f.dia;
+
+-- ---------------------------------------------------------
+-- Nivel 4: funciones de ventana
+-- ---------------------------------------------------------
+
+-- 9. Para cada digestor, ¿cuál fue su día de cocción más caliente?
+-- Por qué importa: da una referencia del mejor rendimiento de cada digestor.
+-- Respuesta: en ambos es un día normal, cerca de 160 °C. Los días normales
+-- difieren en décimas, así que el ganador depende del ruido de los datos.
+with temperatura_diaria as (
+    select d.tag, l.fecha_hora::date as dia, avg(l.medicion) as temp_coccion_promedio
+    from sensores s
+    inner join lecturas l on l.sensor_id = s.id
+    inner join digestores d on d.id = s.digestor_id
+    where s.tipo = 'temperatura' and s.zona = 'coccion'
+    group by d.tag, l.fecha_hora::date
+),
+ranking_diario as (
+    select tag, dia, temp_coccion_promedio,
+           row_number() over (partition by tag order by temp_coccion_promedio desc) as ranking
+    from temperatura_diaria
+)
+select tag, dia, round(temp_coccion_promedio, 2) as temp_coccion_promedio
+from ranking_diario
+where ranking = 1;
+
+-- 10. ¿Cuándo empezó la anomalía del DIG-L2?
+-- Por qué importa: saber desde cuándo existe una falla permite revisar qué pasó antes.
+-- Respuesta: el 5 de octubre a las 14:00, cuando la temperatura de cocción cruzó
+-- el límite normal de 150 °C. Se usa el cruce del umbral y no una caída fija,
+-- porque el ruido normal del sensor puede llegar a 20 °C entre lecturas.
+with lecturas_tt201 as (
+    select l.fecha_hora as dia_hora,
+           l.medicion as valor_actual,
+           lag(l.medicion) over (order by l.fecha_hora) as valor_anterior
+    from sensores s
+    inner join lecturas l on l.sensor_id = s.id
+    where s.tag = 'TT-201'
+)
+select dia_hora, valor_actual, valor_anterior
+from lecturas_tt201
+where valor_anterior >= 150 and valor_actual < 150;
+
+-- 11. ¿Cuántas horas estuvo detenido cada digestor, según sus lecturas de flujo?
+-- Por qué importa: valida los registros de mantenimiento con una fuente independiente.
+-- Respuesta: DIG-L1, 24 horas; DIG-L2, 12 horas. El registro del DIG-L2 suma 15 horas
+-- de correctivo, pero 3 de ellas (la revisión de la instrumentista) se hicieron
+-- con el digestor funcionando. Horas de mantenimiento no son horas de detención.
+select d.tag, count(*) * 0.25 as horas_detenido
+from sensores s
+inner join digestores d on d.id = s.digestor_id
+inner join lecturas l on l.sensor_id = s.id
+where s.tipo = 'flujo' and l.medicion < 10
+group by d.tag
+order by d.tag;
+
+-- 12. Para cada mantenimiento correctivo, ¿cuál era la temperatura de cocción promedio en las 6 horas previas?
+-- Por qué importa: muestra si la falla dio señales antes de la intervención (base del mantenimiento predictivo).
+-- Respuesta:
+--   DIG-L1, 3 oct 10:00: ~160 °C. Falla repentina, sin señales previas.
+--   DIG-L2, 5 oct 16:30: ~150 °C. La falla llevaba 2,5 horas cuando llegó la instrumentista.
+--   DIG-L2, 6 oct 09:00: ~135 °C. La primera intervención no resolvió el problema.
+select m.id, d.tag,
+       m.fecha_inicio as inicio_mantenimiento,
+       round(avg(l.medicion), 2) as temp_coccion_previa,
+       count(*) as lecturas
+from mantenimientos m
+inner join digestores d on d.id = m.digestor_id
+inner join sensores s on s.digestor_id = m.digestor_id
+inner join lecturas l on l.sensor_id = s.id
+where m.tipo = 'correctivo'
+  and s.tipo = 'temperatura'
+  and s.zona = 'coccion'
+  and l.fecha_hora >= m.fecha_inicio - interval '6 hours'
+  and l.fecha_hora <  m.fecha_inicio
+group by m.id, d.tag, m.fecha_inicio
+order by m.fecha_inicio;
 
