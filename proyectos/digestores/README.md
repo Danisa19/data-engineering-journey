@@ -100,3 +100,82 @@ Por su parte, DIG-L3 operó normal toda la semana y sirve como referencia para c
 | cocción | 146.23| 150.50 | --- |
 | inferior | 86.64 | 88.32 | 89.85 |
 
+El DIG-L3 operó normal toda la semana y sirve como referencia. El DIG-L1 tiene todas
+sus zonas por debajo de la referencia, de forma pareja, por su detención de 24 horas,
+durante la cual las temperaturas bajaron a entre 50 y 80 °C. En el DIG-L2, la zona de
+cocción fue la más afectada, porque sufrió dos eventos: la falla de la bomba de
+circulación de licor y la detención, mientras que las zonas superior e inferior solo
+tuvieron la detención.
+
+### 2. Temperatura de cocción dia por dia
+
+| Día | DIG-L1 | DIG-L2 
+|---|---|---|
+| 1 oct | 159.9| 160.55 | 
+| 2 oct | 160.78| 160.47 | 
+| 3 oct | **102.39** | 159.77 | 
+| 4 oct | **120.41** | 161.05 | 
+| 5 oct | 159.88 | **149.62** | 
+| 6 oct | 160.39 | **103.25** | 
+| 7 oct | 159.89 | 158.81 | 
+
+En el DIG-L1 destacan el 3 y el 4 de octubre, y en el DIG-L2, el 5 y el 6. Los eventos
+cruzan la medianoche, así que sus horas se reparten entre dos días.
+
+El 5 de octubre del DIG-L2 casi no se nota, porque ese día no hubo detención, sino la
+falla de la bomba de circulación de licor. Durante la falla, la cocción bajó a
+130–140 °C, no a 50–80 °C como en una detención: una caída mucho más suave. Además,
+la falla empezó a las 14:00, así que 14 de las 24 horas de ese día fueron normales.
+
+El promedio diario sirve para detectar desviaciones respecto al rango normal de operación. Detecta bien las detenciones, pero casi esconde las fallas más suaves, como la de la bomba. Para encontrarlas hay que analizar las lecturas una por una, como en el siguiente hallazgo.
+
+### 3. El inicio de la falla
+
+| Momento | Lectura anterior | Lectura actual |
+|---|---|---|
+| 5 oct, 14:00 | 155,49 °C | 134,35 °C |
+
+Se utilizó la función de ventana `LAG` para poner al lado de cada lectura el valor de
+la medición anterior, y se buscó el momento en que la temperatura de cocción cruzó el
+umbral de 150 °C: la lectura anterior dentro del rango normal y la actual por debajo.
+
+Se eligió el cruce del umbral en vez de buscar una caída brusca, porque el ruido normal
+del sensor entre dos lecturas puede llegar a 20 °C. Si se hubieran buscado caídas de
+más de 25 °C, esta falla, de 21 °C, no habría aparecido; con caídas de más de 15 °C,
+habría falsas alarmas en lecturas normales. El umbral evita ambos problemas, porque en
+operación normal la cocción nunca baja de 150 °C.
+
+Esto importa porque la falla empezó a las 14:00, pero la instrumentista llegó a las
+16:30. Una alarma con esta lógica habría avisado 2,5 horas antes.
+
+### 4. Horas de detención vs. registro de mantenimiento
+
+| Digestor | Horas de correctivo (registro) | Horas detenido (sensores) |
+|---|---|---|
+| DIG-L1 | 24 | 24 |
+| DIG-L2 | 15 | 12 |
+
+Las horas de detención se calcularon a partir de las lecturas de flujo bajo 10 m³/h,
+contando cada lectura como 15 minutos. En el DIG-L2 se contaron 12 horas de detención y
+no 15, porque durante las 3 horas del correctivo del 5 de octubre el digestor siguió
+operando, con el flujo reducido por la falla (entre 100 y 150 m³/h).
+
+Las horas de mantenimiento no son lo mismo que las horas de detención. Cruzar el
+registro de mantenimiento con los datos de los sensores permite calcular con más
+precisión la producción perdida: usando solo el registro, se habrían contado 3 horas
+de detención que no ocurrieron.
+
+### 5. Las 6 horas previas a cada correctivo
+
+### 5. Temperatura de cocción en las 6 horas previas a cada correctivo
+
+| Correctivo | Inicio | Temp. promedio previa | Qué indica |
+|---|---|---|---|
+| DIG-L1 | 3 oct, 10:00 | 159,74 °C | Falla repentina, sin señales previas |
+| DIG-L2 | 5 oct, 16:30 | 149,85 °C | La falla llevaba 2,5 h cuando llegó la instrumentista |
+| DIG-L2 | 6 oct, 09:00 | 135,50 °C | La primera intervención no resolvió el problema |
+
+El valor del 5 de octubre queda casi en el límite porque la ventana mezcla 3,5 horas
+normales (10:30 a 14:00) con 2,5 horas de falla (14:00 a 16:30).
+
+Analizar qué ocurre antes de cada correctivo es la base del mantenimiento predictivo: si se reconocen los patrones previos a una falla, se pueden configurar alarmas que avisen antes y programar la mantención a tiempo, en vez de reaccionar cuando el equipo ya falló.
