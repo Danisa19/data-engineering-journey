@@ -165,8 +165,6 @@ registro de mantenimiento con los datos de los sensores permite calcular con má
 precisión la producción perdida: usando solo el registro, se habrían contado 3 horas
 de detención que no ocurrieron.
 
-### 5. Las 6 horas previas a cada correctivo
-
 ### 5. Temperatura de cocción en las 6 horas previas a cada correctivo
 
 | Correctivo | Inicio | Temp. promedio previa | Qué indica |
@@ -179,3 +177,66 @@ El valor del 5 de octubre queda casi en el límite porque la ventana mezcla 3,5 
 normales (10:30 a 14:00) con 2,5 horas de falla (14:00 a 16:30).
 
 Analizar qué ocurre antes de cada correctivo es la base del mantenimiento predictivo: si se reconocen los patrones previos a una falla, se pueden configurar alarmas que avisen antes y programar la mantención a tiempo, en vez de reaccionar cuando el equipo ya falló.
+
+## Cómo ejecutarlo
+
+**Requisitos:** Docker, Git y un cliente SQL (por ejemplo, DBeaver).
+
+1. Clonar el repositorio:
+
+   ```bash
+   git clone https://github.com/Danisa19/data-engineering-journey.git
+   cd data-engineering-journey/proyectos/digestores
+   ```
+
+2. Levantar PostgreSQL en Docker:
+
+   ```bash
+   docker run --name postgres-dev \
+     -e POSTGRES_USER=postgres \
+     -e POSTGRES_PASSWORD=tu_contraseña \
+     -p 5432:5432 \
+     -d postgres:16
+   ```
+
+3. Crear la base de datos `planta_celulosa`:
+
+   ```bash
+   docker exec -it postgres-dev psql -U postgres -c "CREATE DATABASE planta_celulosa;"
+   ```
+
+4. Ejecutar los scripts, en este orden:
+
+   | Orden | Archivo | Qué hace |
+   |---|---|---|
+   | 1 | `planta_celulosa_carga.sql` | Crea las tablas y carga los datos simulados |
+   | 2 | `verificaciones.sql` | Revisa la calidad de los datos |
+   | 3 | `02_consultas.sql` | Ejecuta las 12 consultas de análisis |
+
+   Se pueden ejecutar desde DBeaver, conectado a `planta_celulosa`, o desde la terminal:
+
+   ```bash
+   docker exec -i postgres-dev psql -U postgres -d planta_celulosa < planta_celulosa_carga.sql
+   ```
+
+5. Verificar la carga: `SELECT COUNT(*) FROM lecturas;` debe devolver **11.424**.
+
+Gracias a `setseed`, los resultados son los mismos que los de la sección de hallazgos.
+
+## Estructura del repositorio
+
+| Archivo | Contenido |
+|---|---|
+| `README.md` | Documentación del proyecto: contexto, modelo, hallazgos e instrucciones |
+| `diagrama_modelo.png` | Diagrama entidad-relación |
+| `planta_celulosa_carga.sql` | Crea las tablas y carga los datos simulados |
+| `verificaciones.sql` | Revisa la calidad de los datos |
+| `02_consultas.sql` | Ejecuta las 12 consultas de análisis |
+
+## Próximos pasos
+
+- Un script en Python que genere las lecturas y las cargue a Postgres, en vez de hacerlo con SQL
+- Que ese pipeline corra solo, por ejemplo cada 15 minutos, con Airflow
+- Un modelo dimensional con dbt: las lecturas como tabla de hechos, y los digestores y sensores como dimensiones
+- Llevar la base y el pipeline a AWS
+- Implementar la alarma del hallazgo 3 dentro del pipeline, para que avise automáticamente cuando una variable cruce su umbral.
