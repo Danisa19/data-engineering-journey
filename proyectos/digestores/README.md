@@ -94,11 +94,11 @@ Por su parte, DIG-L3 operó normal toda la semana y sirve como referencia para c
 
 ### 1. Perfil de temperatura por digestor y zona
 
-| Zona | DIG-L1 | DIG-L2 | DIG-L3 |
+| Zona | DIG-L1 (°C) | DIG-L2 (°C) | DIG-L3 (°C) |
 |---|---|---|---|
-| superior | 112.19| 116.24 | 119.58 |
-| cocción | 146.23| 150.50 | --- |
-| inferior | 86.64 | 88.32 | 89.85 |
+| superior | 112,19| 116,24 | 119,58 |
+| cocción | 146,23| 150,50 | --- |
+| inferior | 86,73 | 88,32 | 89,85 |
 
 El DIG-L3 operó normal toda la semana y sirve como referencia. El DIG-L1 tiene todas
 sus zonas por debajo de la referencia, de forma pareja, por su detención de 24 horas,
@@ -107,17 +107,17 @@ cocción fue la más afectada, porque sufrió dos eventos: la falla de la bomba 
 circulación de licor y la detención, mientras que las zonas superior e inferior solo
 tuvieron la detención.
 
-### 2. Temperatura de cocción dia por dia
+### 2. Temperatura de cocción día por día
 
-| Día | DIG-L1 | DIG-L2 
+| Día | DIG-L1 (°C) | DIG-L2 (°C)|
 |---|---|---|
-| 1 oct | 159.9| 160.55 | 
-| 2 oct | 160.78| 160.47 | 
-| 3 oct | **102.39** | 159.77 | 
-| 4 oct | **120.41** | 161.05 | 
-| 5 oct | 159.88 | **149.62** | 
-| 6 oct | 160.39 | **103.25** | 
-| 7 oct | 159.89 | 158.81 | 
+| 1 oct | 159,90| 160,55 | 
+| 2 oct | 160,78| 160,47 | 
+| 3 oct | **102,39** | 159,77 | 
+| 4 oct | **120,41** | 161,05 | 
+| 5 oct | 159,88 | **149,62** | 
+| 6 oct | 160,39 | **103,25** | 
+| 7 oct | 159,89 | 158,81 | 
 
 En el DIG-L1 destacan el 3 y el 4 de octubre, y en el DIG-L2, el 5 y el 6. Los eventos
 cruzan la medianoche, así que sus horas se reparten entre dos días.
