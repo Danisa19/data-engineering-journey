@@ -2,3 +2,5 @@
 backups/
 .env
 .venv/
+fase2/anormales.csv
+fase2/resumen.json
