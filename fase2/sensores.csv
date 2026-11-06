@@ -1,0 +1,5 @@
+tag,tipo,zona,digestor
+TT-101,temperatura,coccion,DIG-L1
+TT-201,temperatura,coccion,DIG-L2
+TT-202,temperatura,superior,DIG-L2
+PT-200,presion,superior,DIG-L2
